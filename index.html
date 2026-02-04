@@ -1,164 +1,322 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Valentine</title>
+  <title>Be my Valentine 💘</title>
+
   <style>
-    :root { --radius: 14px; }
+    :root{
+      --bgA:#ff2d7a;
+      --bgB:#7c3aed;
+      --bgC:#00c2ff;
+      --card: rgba(255,255,255,.14);
+      --stroke: rgba(255,255,255,.22);
+      --text: rgba(255,255,255,.95);
+      --muted: rgba(255,255,255,.78);
+      --shadow: rgba(0,0,0,.25);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
 
     body{
       margin:0;
-      min-height:100vh;
-      display:grid;
-      place-items:center;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:#0b0b10;
-      color:#fff;
+      overflow:hidden;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
+
+      background:
+        radial-gradient(900px 600px at 20% 20%, rgba(255,45,122,.55), transparent 60%),
+        radial-gradient(900px 700px at 80% 80%, rgba(124,58,237,.55), transparent 62%),
+        radial-gradient(700px 500px at 80% 20%, rgba(0,194,255,.45), transparent 60%),
+        linear-gradient(135deg, #0b0b16, #0b0b16);
+
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      position:relative;
+    }
+
+    /* floating hearts */
+    .heart{
+      position:absolute;
+      font-size:18px;
+      opacity:.25;
+      animation: floatUp linear infinite;
+      user-select:none;
+      pointer-events:none;
+      transform: translateY(120vh);
+      filter: blur(.2px);
+    }
+    @keyframes floatUp{
+      to { transform: translateY(-140vh); }
     }
 
     .card{
-      width:min(560px, 92vw);
-      padding:28px;
+      width:min(560px, 94vw);
       border-radius:22px;
-      background: rgba(255,255,255,0.06);
-      border:1px solid rgba(255,255,255,0.12);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      box-shadow: 0 24px 80px var(--shadow);
+      backdrop-filter: blur(14px);
+      padding:26px 18px 18px;
       text-align:center;
+      position:relative;
+      overflow:hidden;
+    }
+
+    /* neon border glow */
+    .card:before{
+      content:"";
+      position:absolute; inset:-2px;
+      background: conic-gradient(from 180deg, rgba(255,45,122,.6), rgba(124,58,237,.6), rgba(0,194,255,.6), rgba(255,45,122,.6));
+      filter: blur(18px);
+      opacity:.35;
+      z-index:-1;
+    }
+
+    .badge{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.22);
+      background: rgba(0,0,0,.18);
+      font-size:12px;
+      margin-bottom:14px;
+      color: var(--muted);
     }
 
     h1{
-      margin:0 0 10px;
-      font-size: clamp(26px, 3.4vw, 34px);
-      font-weight:700;
-      letter-spacing: -0.02em;
+      margin:0 0 8px;
+      font-size: clamp(22px, 4.4vw, 36px);
+      letter-spacing:-0.6px;
+      text-shadow: 0 10px 30px rgba(0,0,0,.25);
     }
 
-    .sub{
-      margin:0 0 22px;
-      opacity:0.85;
-      font-size:16px;
+    p{
+      margin:0 0 18px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height:1.35;
     }
 
-    .playground{
-      position:relative;
-      height:140px;
-      border-radius:18px;
-      background: rgba(255,255,255,0.04);
-      border:1px solid rgba(255,255,255,0.08);
-      overflow:hidden;
+    /* button row */
+    .row{
       display:flex;
-      align-items:center;
       justify-content:center;
-    }
-
-    .btn-row{
-      display:flex;
+      align-items:center;
       gap:14px;
-      align-items:center;
-      justify-content:center;
-      position:absolute;
-      left:50%;
-      top:50%;
-      transform: translate(-50%, -50%);
-      width:max-content;
+      margin-top:8px;
     }
 
     button{
       border:0;
-      border-radius: var(--radius);
-      padding:12px 18px;
+      border-radius:14px;
+      padding: 13px 22px;
       font-size:16px;
-      font-weight:600;
       cursor:pointer;
-      transition: transform 140ms ease, filter 140ms ease;
       user-select:none;
-      outline:none;
+      touch-action: manipulation;
+      box-shadow: 0 14px 30px rgba(0,0,0,.20);
+      transition: transform .12s ease, filter .12s ease;
+      font-weight: 700;
+      letter-spacing: .2px;
+      min-width: 130px;
     }
+    button:active{ transform: translateY(1px) scale(.99); }
 
     #yes{
-      background:#2dd4bf;
-      color:#07110f;
+      background: linear-gradient(135deg, rgba(0,229,168,1), rgba(0,194,255,1));
+      color: #05121a;
+      transform: scale(1);
     }
 
     #no{
-      background: rgba(255,255,255,0.12);
-      color:#fff;
-      border:1px solid rgba(255,255,255,0.18);
-      backdrop-filter: blur(6px);
+      background: linear-gradient(135deg, rgba(255,59,48,1), rgba(255,45,122,1));
+      color: white;
+      position:relative; /* no longer absolute */
     }
 
-    .yes-bigger{
-      transform: scale(1.25) !important;
+    .hint{
+      margin-top:14px;
+      font-size:12px;
+      color: rgba(255,255,255,.65);
     }
 
     .result{
+      display:none;
       margin-top:16px;
-      min-height:24px;
-      font-size:16px;
+      padding:14px 12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.20);
+      background: rgba(0,0,0,.18);
+      text-align:center;
+    }
+    .result strong{ color:#00ffd1; }
+
+    canvas{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
     }
   </style>
 </head>
-<body>
-  <div class="card">
-    <h1>Ariana, would you be my Valentine?</h1>
-    <p class="sub">Be honest.</p>
 
-    <div class="playground" id="playground">
-      <div class="btn-row" id="btnRow">
-        <button id="yes">Yes</button>
-        <button id="no">No</button>
-      </div>
+<body>
+  <!-- hearts -->
+  <span class="heart" style="left:6%;  animation-duration:13s; animation-delay:-2s;">💗</span>
+  <span class="heart" style="left:16%; animation-duration:16s; animation-delay:-9s;">💞</span>
+  <span class="heart" style="left:28%; animation-duration:14s; animation-delay:-6s;">❤️</span>
+  <span class="heart" style="left:43%; animation-duration:18s; animation-delay:-4s;">💘</span>
+  <span class="heart" style="left:58%; animation-duration:15s; animation-delay:-11s;">💗</span>
+  <span class="heart" style="left:72%; animation-duration:17s; animation-delay:-7s;">💞</span>
+  <span class="heart" style="left:88%; animation-duration:12s; animation-delay:-5s;">❤️</span>
+
+  <div class="card">
+    <div class="badge">💌 Valentine Link • “No” gets shy</div>
+    <h1>Would you be my Valentine? 💘</h1>
+    <p>Pick one… try “No” if you can 😄</p>
+
+    <div class="row">
+      <button id="yes" type="button">Yes 😍</button>
+      <button id="no" type="button">No 🙃</button>
     </div>
 
-    <div class="result" id="result"></div>
+    <div class="result" id="result">
+      <div><strong>Yesss!</strong> 💚</div>
+      <div class="hint" id="msgHint"></div>
+    </div>
+
+    <div class="hint" id="hint">Hover/tap “No” to see what happens.</div>
   </div>
 
+  <canvas id="fx"></canvas>
+
   <script>
-    const playground = document.getElementById("playground");
-    const btnRow = document.getElementById("btnRow");
+    const noBtn = document.getElementById("no");
     const yesBtn = document.getElementById("yes");
-    const noBtn  = document.getElementById("no");
+    const hint = document.getElementById("hint");
     const result = document.getElementById("result");
+    const msgHint = document.getElementById("msgHint");
 
-    const PAD = 12;
+    let yesScale = 1;
 
-    function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+    // move "No" but keep it inside the card (never off-screen)
+    function moveNo(){
+      const card = document.querySelector(".card");
+      const c = card.getBoundingClientRect();
+      const b = noBtn.getBoundingClientRect();
 
-    function moveRow(){
-      const p = playground.getBoundingClientRect();
-      const r = btnRow.getBoundingClientRect();
+      // Keep within card padding area
+      const pad = 14;
+      const minX = c.left + pad;
+      const maxX = c.right - pad - b.width;
+      const minY = c.top + 90;               // below title
+      const maxY = c.bottom - pad - b.height;
 
-      const x = clamp(Math.random() * (p.width - r.width - PAD), PAD, p.width - r.width - PAD);
-      const y = clamp(Math.random() * (p.height - r.height - PAD), PAD, p.height - r.height - PAD);
+      const x = minX + Math.random() * Math.max(0, (maxX - minX));
+      const y = minY + Math.random() * Math.max(0, (maxY - minY));
 
-      btnRow.style.left = `${x}px`;
-      btnRow.style.top  = `${y}px`;
-      btnRow.style.transform = `translate(0,0)`;
+      // make it float above layout without pushing other elements
+      noBtn.style.position = "fixed";
+      noBtn.style.left = x + "px";
+      noBtn.style.top  = y + "px";
+      noBtn.style.zIndex = 5;
+
+      // grow YES
+      yesScale += 0.12;
+      yesBtn.style.transform = `scale(${yesScale})`;
+      hint.textContent = "Nope 😄";
     }
 
-    function onNoHover(){
-      yesBtn.classList.add("yes-bigger");
-      moveRow();
-    }
+    // hover/tap triggers
+    noBtn.addEventListener("mouseenter", moveNo);
+    noBtn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      moveNo();
+    }, { passive:false });
 
-    function onNoLeave(){
-      yesBtn.classList.remove("yes-bigger");
-    }
-
-    noBtn.addEventListener("mouseenter", onNoHover);
-    noBtn.addEventListener("focus", onNoHover);
-    playground.addEventListener("mouseleave", onNoLeave);
-    noBtn.addEventListener("blur", onNoLeave);
-
+    // YES prompt + fireworks
     yesBtn.addEventListener("click", () => {
-      result.textContent = "💘 Knew it.";
-      btnRow.style.left = "50%";
-      btnRow.style.top = "50%";
-      btnRow.style.transform = "translate(-50%, -50%)";
+      const name = prompt("Yesss! 💚 What’s your name?");
+      result.style.display = "block";
+      msgHint.textContent = name ? `Okay ${name}… it’s official 💘` : "Okay… it’s official 💘";
+
+      yesBtn.disabled = true;
+      noBtn.disabled = true;
+      hint.textContent = "Great choice 😄";
+
+      fireworks();
     });
 
-    noBtn.addEventListener("click", moveRow);
+    // Fireworks / confetti-ish burst
+    const canvas = document.getElementById("fx");
+    const ctx = canvas.getContext("2d");
+
+    function resize(){
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    function fireworks(){
+      const bursts = 6;
+      const particles = [];
+
+      for(let i=0;i<bursts;i++){
+        const cx = (0.2 + Math.random()*0.6) * canvas.width;
+        const cy = (0.2 + Math.random()*0.5) * canvas.height;
+        const count = 70;
+
+        for(let j=0;j<count;j++){
+          const angle = Math.random()*Math.PI*2;
+          const speed = 2 + Math.random()*6;
+          particles.push({
+            x: cx,
+            y: cy,
+            vx: Math.cos(angle)*speed,
+            vy: Math.sin(angle)*speed,
+            life: 70 + Math.random()*30,
+            hue: Math.random()*360
+          });
+        }
+      }
+
+      let frame = 0;
+      const timer = setInterval(() => {
+        frame++;
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+
+        for(const p of particles){
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.05;         // gravity
+          p.vx *= 0.98;
+          p.vy *= 0.98;
+          p.life--;
+
+          ctx.beginPath();
+          ctx.fillStyle = `hsla(${p.hue}, 90%, 60%, ${Math.max(0, p.life/100)})`;
+          ctx.arc(p.x, p.y, 2.2, 0, Math.PI*2);
+          ctx.fill();
+        }
+
+        // remove dead
+        for(let i=particles.length-1;i>=0;i--){
+          if(particles[i].life <= 0) particles.splice(i,1);
+        }
+
+        if(frame > 140){
+          clearInterval(timer);
+          ctx.clearRect(0,0,canvas.width,canvas.height);
+        }
+      }, 16);
+    }
   </script>
 </body>
 </html>
