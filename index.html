@@ -202,142 +202,192 @@
   </div>
 
   <canvas id="fx"></canvas>
+<script>
+  const card  = document.getElementById("card");
+  const noBtn = document.getElementById("no");
+  const yesBtn= document.getElementById("yes");
+  const hint  = document.getElementById("hint");
+  const result= document.getElementById("result");
 
-  <script>
-    const card  = document.getElementById("card");
-    const row   = document.getElementById("row");
-    const noBtn = document.getElementById("no");
-    const yesBtn= document.getElementById("yes");
-    const hint  = document.getElementById("hint");
-    const result= document.getElementById("result");
+  let yesScale = 1;
+  let noDetached = false;
 
-    let yesScale = 1;
-    let noDetached = false;
+  // anti-teleport / anti-disappear controls
+  let moving = false;
+  let cooldownUntil = 0;
 
-    function detachNoIntoCard(){
-      if(noDetached) return;
+  function detachNoIntoCard(){
+    if(noDetached) return;
 
-      // compute NO position relative to card before detaching
-      const c = card.getBoundingClientRect();
-      const b = noBtn.getBoundingClientRect();
+    const c = card.getBoundingClientRect();
+    const b = noBtn.getBoundingClientRect();
 
-      const left = b.left - c.left;
-      const top  = b.top  - c.top;
+    const left = b.left - c.left;
+    const top  = b.top  - c.top;
 
-      noBtn.style.position = "absolute";
-      noBtn.style.left = left + "px";
-      noBtn.style.top  = top + "px";
-      noBtn.style.zIndex = 3;
+    noBtn.style.position = "absolute";
+    noBtn.style.left = left + "px";
+    noBtn.style.top  = top + "px";
+    noBtn.style.zIndex = 3;
 
-      noDetached = true;
+    noDetached = true;
+  }
+
+  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+  function moveNoInsideCard(evt){
+    const now = Date.now();
+    if (moving || now < cooldownUntil) return;
+
+    moving = true;
+    cooldownUntil = now + 250; // short cooldown so it moves only once per hover/tap
+
+    detachNoIntoCard();
+
+    const c = card.getBoundingClientRect();
+
+    // Use current button size (after positioned absolute)
+    const bw = noBtn.offsetWidth;
+    const bh = noBtn.offsetHeight;
+
+    // Safe zone (keeps it visible)
+    const pad = 14;
+    const topSafe = 120;
+
+    const minX = pad;
+    const maxX = c.width - pad - bw;
+    const minY = topSafe;
+    const maxY = c.height - pad - bh;
+
+    // Pointer position relative to card (so we can move away from it)
+    let px = c.width / 2;
+    let py = c.height / 2;
+
+    if (evt && evt.clientX != null) {
+      px = evt.clientX - c.left;
+      py = evt.clientY - c.top;
     }
 
-    function moveNoInsideCard(){
-      detachNoIntoCard();
+    // Pick a position that is NOT close to the pointer
+    // Try a few times; if none, fall back to any valid position.
+    const minDist = 110; // distance away from cursor
+    let x = 0, y = 0, ok = false;
 
-      const c = card.getBoundingClientRect();
-      const b = noBtn.getBoundingClientRect();
-
-      // Safe zone inside the card (avoid title area)
-      const pad = 14;
-      const topSafe = 110; // keep below title/text
-      const minX = pad;
-      const maxX = (c.width - pad - b.width);
-      const minY = topSafe;
-      const maxY = (c.height - pad - b.height);
-
-      // if screen is tiny, clamp
-      const x = minX + Math.random() * Math.max(0, (maxX - minX));
-      const y = minY + Math.random() * Math.max(0, (maxY - minY));
-
-      noBtn.style.left = x + "px";
-      noBtn.style.top  = y + "px";
-
-      // grow YES
-      yesScale += 0.12;
-      yesBtn.style.transform = `scale(${yesScale})`;
-
-      hint.textContent = "Nope 😄";
+    for (let i = 0; i < 12; i++){
+      const rx = minX + Math.random() * Math.max(0, (maxX - minX));
+      const ry = minY + Math.random() * Math.max(0, (maxY - minY));
+      const dx = rx - px;
+      const dy = ry - py;
+      if (Math.hypot(dx, dy) >= minDist){
+        x = rx; y = ry; ok = true; break;
+      }
     }
 
-    // hover/tap triggers
-    noBtn.addEventListener("mouseenter", moveNoInsideCard);
-    noBtn.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      moveNoInsideCard();
-    }, { passive:false });
-
-    // YES (no prompt)
-    yesBtn.addEventListener("click", () => {
-      result.style.display = "block";
-      yesBtn.disabled = true;
-      noBtn.disabled = true;
-      hint.textContent = "Great choice 😄";
-      fireworks();
-    });
-
-    // fireworks burst
-    const canvas = document.getElementById("fx");
-    const ctx = canvas.getContext("2d");
-
-    function resize(){
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+    if(!ok){
+      x = minX + Math.random() * Math.max(0, (maxX - minX));
+      y = minY + Math.random() * Math.max(0, (maxY - minY));
     }
-    window.addEventListener("resize", resize);
-    resize();
 
-    function fireworks(){
-      const bursts = 6;
-      const particles = [];
+    // Clamp just in case
+    x = clamp(x, minX, maxX);
+    y = clamp(y, minY, maxY);
 
-      for(let i=0;i<bursts;i++){
-        const cx = (0.2 + Math.random()*0.6) * canvas.width;
-        const cy = (0.2 + Math.random()*0.5) * canvas.height;
-        const count = 80;
+    noBtn.style.left = x + "px";
+    noBtn.style.top  = y + "px";
 
-        for(let j=0;j<count;j++){
-          const angle = Math.random()*Math.PI*2;
-          const speed = 2 + Math.random()*6;
-          particles.push({
-            x: cx, y: cy,
-            vx: Math.cos(angle)*speed,
-            vy: Math.sin(angle)*speed,
-            life: 80 + Math.random()*35,
-            hue: Math.random()*360
-          });
-        }
+    // Grow YES
+    yesScale += 0.12;
+    yesBtn.style.transform = `scale(${yesScale})`;
+    hint.textContent = "Nope 😄";
+
+    // release lock shortly after move
+    setTimeout(() => { moving = false; }, 120);
+  }
+
+  // IMPORTANT: use mousemove only once per entry, not continuous triggers
+  noBtn.addEventListener("mouseenter", moveNoInsideCard);
+
+  // Mobile tap
+  noBtn.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    const t = e.touches && e.touches[0];
+    moveNoInsideCard(t ? { clientX: t.clientX, clientY: t.clientY } : null);
+  }, { passive:false });
+
+  // YES (no prompt)
+  yesBtn.addEventListener("click", () => {
+    result.style.display = "block";
+    yesBtn.disabled = true;
+    noBtn.disabled = true;
+    hint.textContent = "Great choice 😄";
+    fireworks();
+  });
+
+  // fireworks burst (same as before)
+  const canvas = document.getElementById("fx");
+  const ctx = canvas.getContext("2d");
+
+  function resize(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  function fireworks(){
+    const bursts = 6;
+    const particles = [];
+
+    for(let i=0;i<bursts;i++){
+      const cx = (0.2 + Math.random()*0.6) * canvas.width;
+      const cy = (0.2 + Math.random()*0.5) * canvas.height;
+      const count = 80;
+
+      for(let j=0;j<count;j++){
+        const angle = Math.random()*Math.PI*2;
+        const speed = 2 + Math.random()*6;
+        particles.push({
+          x: cx, y: cy,
+          vx: Math.cos(angle)*speed,
+          vy: Math.sin(angle)*speed,
+          life: 80 + Math.random()*35,
+          hue: Math.random()*360
+        });
+      }
+    }
+
+    let frame = 0;
+    const timer = setInterval(() => {
+      frame++;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      for(const p of particles){
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.05;
+        p.vx *= 0.98;
+        p.vy *= 0.98;
+        p.life--;
+
+        ctx.beginPath();
+        ctx.fillStyle = `hsla(${p.hue}, 90%, 60%, ${Math.max(0, p.life/120)})`;
+        ctx.arc(p.x, p.y, 2.3, 0, Math.PI*2);
+        ctx.fill();
       }
 
-      let frame = 0;
-      const timer = setInterval(() => {
-        frame++;
+      for(let i=particles.length-1;i>=0;i--){
+        if(particles[i].life <= 0) particles.splice(i,1);
+      }
+
+      if(frame > 160){
+        clearInterval(timer);
         ctx.clearRect(0,0,canvas.width,canvas.height);
+      }
+    }, 16);
+  }
+</script>
 
-        for(const p of particles){
-          p.x += p.vx;
-          p.y += p.vy;
-          p.vy += 0.05;
-          p.vx *= 0.98;
-          p.vy *= 0.98;
-          p.life--;
 
-          ctx.beginPath();
-          ctx.fillStyle = `hsla(${p.hue}, 90%, 60%, ${Math.max(0, p.life/120)})`;
-          ctx.arc(p.x, p.y, 2.3, 0, Math.PI*2);
-          ctx.fill();
-        }
-
-        for(let i=particles.length-1;i>=0;i--){
-          if(particles[i].life <= 0) particles.splice(i,1);
-        }
-
-        if(frame > 160){
-          clearInterval(timer);
-          ctx.clearRect(0,0,canvas.width,canvas.height);
-        }
-      }, 16);
-    }
-  </script>
 </body>
 </html>
+
