@@ -63,8 +63,8 @@
       backdrop-filter: blur(14px);
       padding:26px 18px 18px;
       text-align:center;
-      position:relative;
-      overflow:hidden;
+      position:relative;          /* important for absolute children */
+      overflow: hidden;           /* keep "No" inside */
     }
 
     /* neon border glow */
@@ -104,13 +104,15 @@
       line-height:1.35;
     }
 
-    /* button row */
+    /* Buttons start side-by-side */
     .row{
       display:flex;
       justify-content:center;
       align-items:center;
       gap:14px;
       margin-top:8px;
+      position:relative;
+      z-index:2;
     }
 
     button{
@@ -122,7 +124,7 @@
       user-select:none;
       touch-action: manipulation;
       box-shadow: 0 14px 30px rgba(0,0,0,.20);
-      transition: transform .12s ease, filter .12s ease;
+      transition: transform .12s ease, filter .12s ease, left .18s ease, top .18s ease;
       font-weight: 700;
       letter-spacing: .2px;
       min-width: 130px;
@@ -135,16 +137,19 @@
       transform: scale(1);
     }
 
+    /* "No" becomes absolute only after first move */
     #no{
       background: linear-gradient(135deg, rgba(255,59,48,1), rgba(255,45,122,1));
       color: white;
-      position:relative; /* no longer absolute */
+      position: static;
     }
 
     .hint{
       margin-top:14px;
       font-size:12px;
       color: rgba(255,255,255,.65);
+      position:relative;
+      z-index:2;
     }
 
     .result{
@@ -155,6 +160,8 @@
       border:1px solid rgba(255,255,255,.20);
       background: rgba(0,0,0,.18);
       text-align:center;
+      position:relative;
+      z-index:2;
     }
     .result strong{ color:#00ffd1; }
 
@@ -176,19 +183,19 @@
   <span class="heart" style="left:72%; animation-duration:17s; animation-delay:-7s;">💞</span>
   <span class="heart" style="left:88%; animation-duration:12s; animation-delay:-5s;">❤️</span>
 
-  <div class="card">
+  <div class="card" id="card">
     <div class="badge">💌 Valentine Link • “No” gets shy</div>
     <h1>Would you be my Valentine? 💘</h1>
     <p>Pick one… try “No” if you can 😄</p>
 
-    <div class="row">
+    <div class="row" id="row">
       <button id="yes" type="button">Yes 😍</button>
       <button id="no" type="button">No 🙃</button>
     </div>
 
     <div class="result" id="result">
       <div><strong>Yesss!</strong> 💚</div>
-      <div class="hint" id="msgHint"></div>
+      <div class="hint">Screenshot this 😄</div>
     </div>
 
     <div class="hint" id="hint">Hover/tap “No” to see what happens.</div>
@@ -197,63 +204,79 @@
   <canvas id="fx"></canvas>
 
   <script>
+    const card  = document.getElementById("card");
+    const row   = document.getElementById("row");
     const noBtn = document.getElementById("no");
-    const yesBtn = document.getElementById("yes");
-    const hint = document.getElementById("hint");
-    const result = document.getElementById("result");
-    const msgHint = document.getElementById("msgHint");
+    const yesBtn= document.getElementById("yes");
+    const hint  = document.getElementById("hint");
+    const result= document.getElementById("result");
 
     let yesScale = 1;
+    let noDetached = false;
 
-    // move "No" but keep it inside the card (never off-screen)
-    function moveNo(){
-      const card = document.querySelector(".card");
+    function detachNoIntoCard(){
+      if(noDetached) return;
+
+      // compute NO position relative to card before detaching
       const c = card.getBoundingClientRect();
       const b = noBtn.getBoundingClientRect();
 
-      // Keep within card padding area
-      const pad = 14;
-      const minX = c.left + pad;
-      const maxX = c.right - pad - b.width;
-      const minY = c.top + 90;               // below title
-      const maxY = c.bottom - pad - b.height;
+      const left = b.left - c.left;
+      const top  = b.top  - c.top;
 
+      noBtn.style.position = "absolute";
+      noBtn.style.left = left + "px";
+      noBtn.style.top  = top + "px";
+      noBtn.style.zIndex = 3;
+
+      noDetached = true;
+    }
+
+    function moveNoInsideCard(){
+      detachNoIntoCard();
+
+      const c = card.getBoundingClientRect();
+      const b = noBtn.getBoundingClientRect();
+
+      // Safe zone inside the card (avoid title area)
+      const pad = 14;
+      const topSafe = 110; // keep below title/text
+      const minX = pad;
+      const maxX = (c.width - pad - b.width);
+      const minY = topSafe;
+      const maxY = (c.height - pad - b.height);
+
+      // if screen is tiny, clamp
       const x = minX + Math.random() * Math.max(0, (maxX - minX));
       const y = minY + Math.random() * Math.max(0, (maxY - minY));
 
-      // make it float above layout without pushing other elements
-      noBtn.style.position = "fixed";
       noBtn.style.left = x + "px";
       noBtn.style.top  = y + "px";
-      noBtn.style.zIndex = 5;
 
       // grow YES
       yesScale += 0.12;
       yesBtn.style.transform = `scale(${yesScale})`;
+
       hint.textContent = "Nope 😄";
     }
 
     // hover/tap triggers
-    noBtn.addEventListener("mouseenter", moveNo);
+    noBtn.addEventListener("mouseenter", moveNoInsideCard);
     noBtn.addEventListener("touchstart", (e) => {
       e.preventDefault();
-      moveNo();
+      moveNoInsideCard();
     }, { passive:false });
 
-    // YES prompt + fireworks
+    // YES (no prompt)
     yesBtn.addEventListener("click", () => {
-      const name = prompt("Yesss! 💚 What’s your name?");
       result.style.display = "block";
-      msgHint.textContent = name ? `Okay ${name}… it’s official 💘` : "Okay… it’s official 💘";
-
       yesBtn.disabled = true;
       noBtn.disabled = true;
       hint.textContent = "Great choice 😄";
-
       fireworks();
     });
 
-    // Fireworks / confetti-ish burst
+    // fireworks burst
     const canvas = document.getElementById("fx");
     const ctx = canvas.getContext("2d");
 
@@ -271,17 +294,16 @@
       for(let i=0;i<bursts;i++){
         const cx = (0.2 + Math.random()*0.6) * canvas.width;
         const cy = (0.2 + Math.random()*0.5) * canvas.height;
-        const count = 70;
+        const count = 80;
 
         for(let j=0;j<count;j++){
           const angle = Math.random()*Math.PI*2;
           const speed = 2 + Math.random()*6;
           particles.push({
-            x: cx,
-            y: cy,
+            x: cx, y: cy,
             vx: Math.cos(angle)*speed,
             vy: Math.sin(angle)*speed,
-            life: 70 + Math.random()*30,
+            life: 80 + Math.random()*35,
             hue: Math.random()*360
           });
         }
@@ -295,23 +317,22 @@
         for(const p of particles){
           p.x += p.vx;
           p.y += p.vy;
-          p.vy += 0.05;         // gravity
+          p.vy += 0.05;
           p.vx *= 0.98;
           p.vy *= 0.98;
           p.life--;
 
           ctx.beginPath();
-          ctx.fillStyle = `hsla(${p.hue}, 90%, 60%, ${Math.max(0, p.life/100)})`;
-          ctx.arc(p.x, p.y, 2.2, 0, Math.PI*2);
+          ctx.fillStyle = `hsla(${p.hue}, 90%, 60%, ${Math.max(0, p.life/120)})`;
+          ctx.arc(p.x, p.y, 2.3, 0, Math.PI*2);
           ctx.fill();
         }
 
-        // remove dead
         for(let i=particles.length-1;i>=0;i--){
           if(particles[i].life <= 0) particles.splice(i,1);
         }
 
-        if(frame > 140){
+        if(frame > 160){
           clearInterval(timer);
           ctx.clearRect(0,0,canvas.width,canvas.height);
         }
